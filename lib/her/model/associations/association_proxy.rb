@@ -1,7 +1,7 @@
 module Her
   module Model
     module Associations
-      class AssociationProxy < ActiveSupport::BasicObject
+      class AssociationProxy < ActiveSupport::ProxyObject
 
         # @private
         def self.install_proxy_methods(target_name, *names)
