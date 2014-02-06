@@ -119,7 +119,7 @@ module Her
         #   users = User.all # [ { :id => 1, :name => "Tobias" } ]
         #   users.first.name # => "Tobias"
         def extract_array(request_data)
-          if active_model_serializers_format? and !request_data.is_a? Array
+          if active_model_serializers_format? and !request_data[:data].is_a? Array
             request_data[:data][pluralized_parsed_root_element]
           else
             request_data[:data]
