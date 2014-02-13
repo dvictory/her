@@ -21,10 +21,11 @@ module Her
         def parse(data)
           parse_root_in_json? ? data.fetch(parsed_root_element) { data } : data
         end
-
+    
         # @private
         def to_params(attributes, changes={})
           filtered_attributes = attributes.dup.symbolize_keys
+          filtered_attributes = filtered_attributes.except(*associations.values.flatten.collect { |a| a[:data_key] }).symbolize_keys
           if her_api.options[:send_only_modified_attributes]
             filtered_attributes = changes.symbolize_keys.keys.inject({}) do |hash, attribute|
               hash[attribute] = filtered_attributes[attribute]
