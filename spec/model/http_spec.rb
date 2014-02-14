@@ -85,6 +85,7 @@ describe Her::Model::HTTP do
               [200, {}, [{ :id => 1 }, { :id => 2 }].to_json]
             end
           end
+          stub.put("/users") { |env| [200, {}, {"user"=>{ :id => 1 }}.to_json] }
         end
       end
 
@@ -151,6 +152,27 @@ describe Her::Model::HTTP do
         end
       end
     end
+  end
+
+  context "put request" do
+    before do
+      Her::API.setup :url => "https://api.example.com" do |builder|
+        builder.use Her::Middleware::FirstLevelParseJSON
+        builder.use Faraday::Request::UrlEncoded
+        builder.adapter :test do |stub|
+          stub.put("/users") { |env| [200, {}, {"user"=>{ :id => 1 }}.to_json] }
+        end
+      end
+
+      spawn_model("Foo::User") { parse_root_in_json true, format: :active_model_serializers }
+    end
+
+    describe "put to update" do
+      subject { Foo::User.put("/users", {}) }
+      it {should be_a Foo::User}
+
+    end
+
   end
 
   context "setting custom HTTP requests" do
