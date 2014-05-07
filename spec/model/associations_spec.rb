@@ -339,8 +339,10 @@ describe Her::Model::Associations do
   context "building and creating association data" do
     before do
       spawn_model "Foo::Comment"
+      spawn_model "Foo::Role"
       spawn_model "Foo::User" do
         has_many :comments
+        has_one :role
       end
     end
 
@@ -349,6 +351,13 @@ describe Her::Model::Associations do
         @comment = Foo::User.new(:id => 10).comments.build(:body => "Hello!")
         @comment.body.should == "Hello!"
         @comment.user_id.should == 10
+      end
+
+      it "should return the built object" do
+        user = Foo::User.new
+        user.should_not_receive :get
+        role = user.role.build
+        user.role.should == role
       end
     end
 
