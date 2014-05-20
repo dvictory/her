@@ -44,7 +44,9 @@ module Her
 
         # @private
         def fetch(opts = {})
-          return @opts[:default].try(:dup) if @parent.attributes.include?(@name) && @parent.attributes[@name].empty? && @params.empty?
+          #return default if parent is a blank object.
+          #also return default if parent attributes includes a key for the object but the value is blank and no parameters were passed in.
+          return @opts[:default].try(:dup) if @parent.attributes.empty? || (@parent.attributes.include?(@name) && (@parent.attributes[@name].nil? || @parent.attributes[@name].empty?) && @params.empty?)
 
           if @parent.attributes[@name].blank? || @params.any?
             path = build_association_path lambda { "#{@parent.request_path(@params)}#{@opts[:path]}" }
