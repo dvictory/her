@@ -45,7 +45,6 @@ module Her
         # @private
         def fetch(opts = {})
           return @opts[:default].try(:dup) if @parent.attributes[@name].blank? || ( @parent.attributes.include?(@name) && @parent.attributes[@name].empty? && @params.empty? )
-
           @parent.attributes[@name]
         end
 
