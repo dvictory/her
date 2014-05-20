@@ -149,19 +149,8 @@ describe Her::Model::Associations do
       @user_with_included_data.comments.first.user.object_id.should == @user_with_included_data.object_id
     end
 
-    it "uses the given inverse_of key to set the parent model" do
-      @user_with_included_data.posts.first.admin.object_id.should == @user_with_included_data.object_id
-    end
-
-    it "fetches data that was not included through has_many" do
-      @user_without_included_data.comments.first.should be_a(Foo::Comment)
-      @user_without_included_data.comments.length.should == 2
-      @user_without_included_data.comments.first.id.should == 4
-      @user_without_included_data.comments.first.body.should == "They're having a FIRESALE?"
-    end
-
-    it "fetches has_many data even if it was included, only if called with parameters" do
-      @user_with_included_data.comments.where(:foo_id => 1).length.should == 1
+    it "does not fetch data that was not included through has_many" do
+      @user_without_included_data.comments.should eql([])
     end
 
     it "maps an array of included data through has_one" do
@@ -171,14 +160,8 @@ describe Her::Model::Associations do
       @user_with_included_data.role.body.should == "Admin"
     end
 
-    it "fetches data that was not included through has_one" do
-      @user_without_included_data.role.should be_a(Foo::Role)
-      @user_without_included_data.role.id.should == 2
-      @user_without_included_data.role.body.should == "User"
-    end
-
-    it "fetches has_one data even if it was included, only if called with parameters" do
-      @user_with_included_data.role.where(:foo_id => 2).id.should == 3
+    it "does not fetch data that was not included through has_one" do
+      @user_without_included_data.role.should be_nil
     end
 
     it "maps an array of included data through belongs_to" do
@@ -187,14 +170,8 @@ describe Her::Model::Associations do
       @user_with_included_data.organization.name.should == "Bluth Company"
     end
 
-    it "fetches data that was not included through belongs_to" do
-      @user_without_included_data.organization.should be_a(Foo::Organization)
-      @user_without_included_data.organization.id.should == 2
-      @user_without_included_data.organization.name.should == "Bluth Company"
-    end
-
-    it "fetches belongs_to data even if it was included, only if called with parameters" do
-      @user_with_included_data.organization.where(:foo_id => 1).name.should == "Bluth Company Foo"
+    it "does not fetch data that was not included through belongs_to" do
+      @user_without_included_data.organization.should be_nil
     end
 
     it "can tell if it has a association" do
@@ -202,24 +179,14 @@ describe Her::Model::Associations do
       @user_without_included_data.has_association?(:organization).should be_true
     end
 
-    it "fetches the resource corresponding to a named association" do
+    it "does not fetch the resource corresponding to a named association if it has not already been fetched" do
       @user_without_included_data.get_association(:unknown_association).should be_nil
-      @user_without_included_data.get_association(:organization).name.should == "Bluth Company"
-    end
-
-    it "pass query string parameters when additional arguments are passed" do
-      @user_without_included_data.organization.where(:admin => true).name.should == "Bluth Company (admin)"
-      @user_without_included_data.organization.name.should == "Bluth Company"
+      @user_without_included_data.get_association(:organization).should be_nil
     end
 
     it "fetches data with the specified id when calling find" do
       comment = @user_without_included_data.comments.find(5)
       comment.id.should eq(5)
-    end
-
-    it "'s associations responds to #empty?" do
-      @user_without_included_data.organization.respond_to?(:empty?).should be_true
-      @user_without_included_data.organization.should_not be_empty
     end
 
     [:create, :save_existing, :destroy].each do |type|
@@ -278,10 +245,8 @@ describe Her::Model::Associations do
       @user_with_included_nil_data.company.should be_nil
     end
 
-    it "fetches data that was not included through belongs_to" do
-      @user_without_included_data.company.should be_a(Foo::Company)
-      @user_without_included_data.company.id.should == 1
-      @user_without_included_data.company.name.should == "Bluth Company"
+    it "does not fetch data that was not included through belongs_to" do
+      @user_without_included_data.company.should be_nil
     end
 
     it "does not require foreugn key to have nested object" do
@@ -409,9 +374,8 @@ describe Her::Model::Associations do
         builder.use Her::Middleware::FirstLevelParseJSON
         builder.use Faraday::Request::UrlEncoded
         builder.adapter :test do |stub|
-          stub.get("/posts/1") { |env| [200, {}, { post: { id: 1, name: 'post1' } }.to_json] }
+          stub.get("/posts/1") { |env| [200, {}, { post: { id: 1, name: 'post1', comments: [{ id: 1, name: "comment1", user_id: 1}] } }.to_json] }
           stub.get("/posts/1/comments") { |env| [200, {}, { comments: [{ id: 1, name: "comment1", user_id: 1 }] }.to_json] }
-          stub.get("/users/1") { |env| [200, {}, { user: { :id => 2, :name => "Lindsay", :company => nil } }.to_json] }
         end
       end
       Foo::Post.use_api Her::API.default_api
@@ -419,9 +383,9 @@ describe Her::Model::Associations do
       Foo::User.use_api Her::API.default_api
     end
 
-    it 'should pull down the single user object when it belongs to an association' do
+    it 'should not fetch the single user object, even when it belongs to an association' do
       foo = Foo::Post.find(1)
-      foo.comments[0].user.name.should eql 'Lindsay'
+      foo.comments[0].user.should be_nil
     end
 
   end
