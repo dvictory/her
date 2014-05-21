@@ -267,8 +267,8 @@ describe Her::Model::Parse do
       end
 
       spawn_model "Foo::User" do
-        has_many :blog_posts
-        belongs_to :gang
+        has_many :blog_posts, :include_in_parse => true
+        belongs_to :gang, :include_in_parse => true
       end
 
       spawn_model "Foo::BlogPost"
@@ -290,6 +290,9 @@ describe Her::Model::Parse do
     end
 
     it 'excludes associations by default' do
+      Foo::User.class_eval do
+        has_many :blog_posts
+      end
       @user.to_params.has_key?(:blog_posts).should be_false
     end
   end
