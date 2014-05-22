@@ -256,26 +256,43 @@ describe Her::Model::Parse do
 
   context "parsing included associations" do
     let(:blog_posts) { [{ :id => 1, :title => "Welcome To codinghell.ch", :user_id => 1 }, { :id => 2, :title => "How Awesome Is This", :user_id => 1 }] }
-
+    let(:gang) { {name: "Bad Boys"} }
     before do
       Her::API.setup :url => "https://api.example.com" do |builder|
         builder.use Her::Middleware::FirstLevelParseJSON
         builder.use Faraday::Request::UrlEncoded
         builder.adapter :test do |stub|
-          stub.get("/users/1") { |env| [200, {}, { :id => 1, :name => "Tobias Fünke", :blog_posts => blog_posts }.to_json] }
+          stub.get("/users/1") { |env| [200, {}, { :id => 1, :name => "Tobias Fünke", :blog_posts => blog_posts, :gang => gang}.to_json] }
         end
       end
 
       spawn_model "Foo::User" do
-        has_many :blog_posts
+        has_many :blog_posts, :include_in_parse => true
+        belongs_to :gang, :include_in_parse => true
       end
 
       spawn_model "Foo::BlogPost"
+      spawn_model "Foo::Gang"
 
       @user = Foo::User.find(1)
     end
 
     it 'creates the correct params' do
+      Foo::User.class_eval do
+        send_up_child_params true
+      end
+      @user.to_params.has_key?(:blog_posts).should be_true
+      @user.to_params[:blog_posts].should be_a(Array)
+      @user.to_params[:blog_posts][0].should be_a(Hash)
+      @user.to_params[:blog_posts][0][:user_id].should eql(1)
+      @user.to_params[:gang].should be_a(Hash)
+      @user.to_params[:gang][:name].should eql("Bad Boys")
+    end
+
+    it 'excludes associations by default' do
+      Foo::User.class_eval do
+        has_many :blog_posts
+      end
       @user.to_params.has_key?(:blog_posts).should be_false
     end
   end

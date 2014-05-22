@@ -25,11 +25,21 @@ module Her
         # @private
         def to_params(attributes, changes={})
           filtered_attributes = attributes.dup.symbolize_keys
-          filtered_attributes = filtered_attributes.except(*associations.values.flatten.collect { |a| a[:data_key] }).symbolize_keys
+          filtered_attributes = filtered_attributes.except(*associations.values.flatten.collect{|k| k[:data_key] unless k[:include_in_parse]}).symbolize_keys
           if her_api.options[:send_only_modified_attributes]
             filtered_attributes = changes.symbolize_keys.keys.inject({}) do |hash, attribute|
               hash[attribute] = filtered_attributes[attribute]
               hash
+            end
+          end
+          # convert associations to params
+          if send_up_child_params?
+            filtered_attributes.each do |key, value|
+              if value.is_a? Her::Collection
+                filtered_attributes[key] = value.map{|item| item.to_params}
+              elsif value.is_a? Her::Model
+                filtered_attributes[key] = value.to_params
+              end
             end
           end
           include_root_in_json? ? { included_root_element => filtered_attributes } : filtered_attributes
@@ -79,6 +89,21 @@ module Her
 
         def request_new_object_on_build?
           @_her_request_new_object_on_build || (superclass.respond_to?(:request_new_object_on_build?) && superclass.request_new_object_on_build?)
+        end
+
+        # send up params of associations
+        #
+        # @example
+        #   class User
+        #     include Her::Model
+        #     request_new_object_on_build true
+        #   end
+        def send_up_child_params(value = false)
+          @send_up_child_params = value
+        end
+
+        def send_up_child_params?
+          @send_up_child_params || (superclass.respond_to?(:send_up_child_params?) && superclass.send_up_child_params?)
         end
 
         # Return or change the value of `root_element`. Always defaults to the base name of the class.
