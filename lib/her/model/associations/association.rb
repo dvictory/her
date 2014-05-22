@@ -44,9 +44,9 @@ module Her
 
         # @private
         def fetch(opts = {})
-          return @opts[:default].try(:dup) if @parent.attributes.include?(@name) && @parent.attributes[@name].empty? && @params.empty?
+          return @opts[:default].try(:dup) if (@parent.attributes.include?(@name) && @parent.attributes[@name].blank? && @params.empty?)
 
-          if @parent.attributes[@name].blank? || @params.any?
+          if (@parent.attributes[@name].blank? || @params.any?) && @parent.persisted?
             path = build_association_path lambda { "#{@parent.request_path(@params)}#{@opts[:path]}" }
             @klass.get(path, @params)
           else
