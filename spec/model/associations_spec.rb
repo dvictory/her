@@ -89,6 +89,7 @@ describe Her::Model::Associations do
         builder.adapter :test do |stub|
           stub.get("/users/1") { |env| [200, {}, { :id => 1, :name => "Tobias Fünke", :comments => [{ :comment => { :id => 2, :body => "Tobias, you blow hard!", :user_id => 1 } }, { :comment => { :id => 3, :body => "I wouldn't mind kissing that man between the cheeks, so to speak", :user_id => 1 } }], :role => { :id => 1, :body => "Admin" }, :organization => { :id => 1, :name => "Bluth Company" }, :organization_id => 1 }.to_json] }
           stub.get("/users/2") { |env| [200, {}, { :id => 2, :name => "Lindsay Fünke", :organization_id => 2 }.to_json] }
+          stub.get("/users/3") { |env| [200, {}, { :id => 3, :name => "Gob Bluthe", :organization_id => 2 ,:role => nil}.to_json] }
           stub.get("/users/1/comments") { |env| [200, {}, [{ :comment => { :id => 4, :body => "They're having a FIRESALE?" } }].to_json] }
           stub.get("/users/2/comments") { |env| [200, {}, [{ :comment => { :id => 4, :body => "They're having a FIRESALE?" } }, { :comment => { :id => 5, :body => "Is this the tiny town from Footloose?" } }].to_json] }
           stub.get("/users/2/comments/5") { |env| [200, {}, { :comment => { :id => 5, :body => "Is this the tiny town from Footloose?" } }.to_json] }
@@ -240,6 +241,11 @@ describe Her::Model::Associations do
         end
       end
     end
+
+    it "handles nil associations" do
+      user = Foo::User.find(3)
+      user.role.should be_nil
+    end
   end
 
   context "handling associations with details" do
@@ -339,8 +345,17 @@ describe Her::Model::Associations do
   context "building and creating association data" do
     before do
       spawn_model "Foo::Comment"
+      spawn_model "Foo::Role" do
+        has_many :comments
+      end
+      spawn_model "Foo::Gang" do
+        has_many :comments
+        belongs_to :role
+      end
       spawn_model "Foo::User" do
         has_many :comments
+        has_one :role
+        belongs_to :gang
       end
     end
 
@@ -387,6 +402,36 @@ describe Her::Model::Associations do
         bye = Foo::Comment.new(:text => "goodbye")
         user = Foo::User.new(:name => 'vic', :comments => [bye])
         user.comments.first.text.should == 'goodbye'
+      end
+
+      it "create nested has_one models" do
+        user = Foo::User.new(:name => "vic", :role => {:text => "hello"})
+        user.role.text.should == 'hello'
+      end
+
+      it "creates a belongs to model" do
+        user = Foo::User.new(:name => "vic", :gang => {:text => "hello"})
+        user.gang.text.should == 'hello'
+      end
+
+      it "work with deep nested has_many models" do
+        user = Foo::User.new(:name => "vic", :gang => {:text => "hello", :comments=>[{:text=>'hi'}]})
+        user.gang.comments.first.text.should == 'hi'
+      end
+
+      it "work with deep nested belongs_to models" do
+        user = Foo::User.new(:name => "vic", :gang => {:text => "hello", :role=>{:text=>'hi'}})
+        user.gang.role.text.should == 'hi'
+      end
+
+      it "work with deep nested has_one models" do
+        user = Foo::User.new(:name => "vic", :role => {:text => "hello", :comments=>[{:text=>'hi'}]})
+        user.role.comments.first.text.should == 'hi'
+      end
+
+      it "should not call fetch unless item is persisted?" do
+        user = Foo::User.new
+        user.role.should be_nil
       end
     end
   end
