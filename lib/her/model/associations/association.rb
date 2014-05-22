@@ -44,7 +44,6 @@ module Her
 
         # @private
         def fetch(opts = {})
-          #return default if parent attributes includes a key for the object but the value is blank and no parameters were passed in.
           return @opts[:default].try(:dup) if @parent.attributes.include?(@name) && (@parent.attributes[@name].nil? || @parent.attributes[@name].empty?) && @params.empty?
 
           if @parent.attributes[@name].blank? || @params.any?
