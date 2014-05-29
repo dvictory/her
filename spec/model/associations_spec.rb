@@ -367,6 +367,13 @@ describe Her::Model::Associations do
         @comment.user_id.should == 10
         @user.comments.should == [@comment]
       end
+
+      it "should return the built object" do
+        user = Foo::User.new
+        user.should_not_receive :get
+        role = user.role.build
+        user.role.should == role
+      end
     end
 
     context "with #create" do
