@@ -361,9 +361,11 @@ describe Her::Model::Associations do
 
     context "with #build" do
       it "takes the parent primary key" do
-        @comment = Foo::User.new(:id => 10).comments.build(:body => "Hello!")
+        @user = Foo::User.new(:id => 10)
+        @comment = @user.comments.build(:body => "Hello!")
         @comment.body.should == "Hello!"
         @comment.user_id.should == 10
+        @user.comments.should == [@comment]
       end
     end
 

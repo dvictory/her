@@ -50,7 +50,21 @@ module Her
         #   new_comment = user.comments.build(:body => "Hello!")
         #   new_comment # => #<Comment user_id=1 body="Hello!">
         def build(attributes = {})
-          @klass.build(attributes.merge(:"#{@parent.singularized_resource_name}_id" => @parent.id))
+          #@klass.build(attributes.merge(:"#{@parent.singularized_resource_name}_id" => @parent.id))
+          resource = @klass.build(attributes.merge(:"#{@parent.singularized_resource_name}_id" => @parent.id))
+          cached_name = :"@_her_association_#{@name}"
+          cached_data = (instance_variable_defined?(cached_name) && instance_variable_get(cached_name))
+          if cached_data
+
+            cached_data << resource
+          else
+            @parent.instance_variable_set(cached_name, [resource])
+
+          end
+
+
+
+          resource
         end
 
         # Create a new object, save it and add it to the associated collection
