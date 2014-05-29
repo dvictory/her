@@ -365,7 +365,10 @@ describe Her::Model::Associations do
         @comment = @user.comments.build(:body => "Hello!")
         @comment.body.should == "Hello!"
         @comment.user_id.should == 10
-        @user.comments.should == [@comment]
+
+        @user.comments.size.should eql(1)
+        @comment2 = @user.comments.build(:body => "Hello!")
+        @user.comments.size.should == 2
       end
 
       it "should return the built object" do
@@ -398,6 +401,8 @@ describe Her::Model::Associations do
         @comment.body.should == "Hello!"
         @comment.user_id.should == 10
         @user.comments.should == [@comment]
+        @comment2 = @user.comments.create(:body => "Hello! Again")
+        @user.comments.should == [@comment, @comment2]
       end
     end
 
