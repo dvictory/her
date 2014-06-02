@@ -96,7 +96,7 @@ module Her
         # @example
         #   class User
         #     include Her::Model
-        #     request_new_object_on_build true
+        #     send_up_child_params true
         #   end
         def send_up_child_params(value = false)
           @send_up_child_params = value

@@ -295,5 +295,11 @@ describe Her::Model::Parse do
       end
       @user.to_params.has_key?(:blog_posts).should be_false
     end
+
+    it 'can send empty arrays' do
+      @user.assign_attributes(an_array_field: [])
+      @user.to_params[:an_array_field].should be_a(Array)
+      @user.to_params[:an_array_field].should eql([])
+    end
   end
 end
